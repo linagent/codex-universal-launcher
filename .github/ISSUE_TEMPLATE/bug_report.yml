@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible launcher or compatibility problem without sharing secrets.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste credentials, tokens, real proxy URLs, private provider hosts, full logs, or unreviewed diagnostic reports.
+  - type: input
+    id: version
+    attributes:
+      label: Launcher version
+      placeholder: 2.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Architecture
+      options: [Windows x64, Windows ARM64, Built from source]
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: input
+    id: network_mode
+    attributes:
+      label: Proxy or VPN product and mode
+      description: Product/version and system proxy, TUN, PAC, SOCKS5, or other mode. Do not include servers or credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include only redacted output.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed credentials, tokens, private hosts, personal paths, public IPs, and unrelated machine data.
+          required: true
