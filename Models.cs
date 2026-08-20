@@ -22,8 +22,12 @@ internal sealed record LauncherOptions(
     bool NoRepair,
     bool SelfTest,
     bool Demo,
+    bool KeepExistingApp,
     string? ResultPath)
 {
+    public bool ShouldCloseExistingApp =>
+        !CheckOnly && !SelfTest && !Demo && !KeepExistingApp;
+
     public static LauncherOptions Parse(string[] args)
     {
         string? result = null;
@@ -38,6 +42,7 @@ internal sealed record LauncherOptions(
             args.Contains("--no-repair", StringComparer.OrdinalIgnoreCase),
             args.Contains("--self-test", StringComparer.OrdinalIgnoreCase),
             args.Contains("--demo", StringComparer.OrdinalIgnoreCase),
+            args.Contains("--keep-existing", StringComparer.OrdinalIgnoreCase),
             result);
     }
 }

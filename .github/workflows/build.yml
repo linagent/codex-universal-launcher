@@ -39,11 +39,11 @@ jobs:
       - name: Verify formatting
         run: dotnet format --verify-no-changes --no-restore
 
-      - name: Publish x64 smoke artifact
-        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/win-x64
+      - name: Publish lightweight x64 smoke artifact
+        run: dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o publish/win-x64-lite
 
       - name: Upload smoke artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodexUniversalLauncher-win-x64
-          path: publish/win-x64/CodexUniversalLauncher.exe
+          name: CodexUniversalLauncher-win-x64-lite
+          path: publish/win-x64-lite/CodexUniversalLauncher.exe
