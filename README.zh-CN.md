@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="assets/brand/icon-primary-256.png" width="128" alt="Codex 通用启动器图标">
-  <h1>Codex 通用网络启动器</h1>
+  <img src="assets/brand/icon-primary-256.png" width="128" alt="Codex启动器，不再5次重连 图标">
+  <h1>Codex启动器，不再5次重连</h1>
   <p>自动发现 Windows 上真正可用的网络路径，验证 TLS 后再启动 ChatGPT/Codex。</p>
 
   [English](README.md) · [下载最新版](https://github.com/linagent/codex-universal-launcher/releases/latest) · [反馈问题](https://github.com/linagent/codex-universal-launcher/issues/new?template=bug_report.yml)
@@ -33,11 +33,20 @@ Windows 上可能同时存在系统代理、PAC、WinHTTP、代理环境变量�
 
 ## 三步使用
 
-1. 从 [Releases](https://github.com/linagent/codex-universal-launcher/releases) 下载对应压缩包：绝大多数电脑选择 `win-x64`，Windows on Arm 设备选择 `win-arm64`。
+1. 从 [Releases](https://github.com/linagent/codex-universal-launcher/releases) 下载推荐的轻量包：绝大多数电脑选择 `lite-win-x64`，Windows on Arm 设备选择 `lite-win-arm64`。
 2. 解压到普通文件夹；如需更严格校验，可对照 Release 说明检查 SHA-256。
-3. 保持代理/VPN 正常运行，双击 `CodexUniversalLauncher.exe`。预检通过后，启动器会打开 ChatGPT/Codex。
+3. 保持代理/VPN 正常运行，双击 `CodexUniversalLauncher.exe`。预检通过后，启动器会自动关闭已经运行的 ChatGPT/Codex，再启动一个继承新网络环境的实例。
 
-发布包为自包含单文件，不需要另外安装 .NET。目前二进制没有代码签名，Windows SmartScreen 可能显示“未知发布者”；不愿放行时，请直接审查源码并自行构建。
+`lite` 是推荐下载，压缩包约 170–180 KB，功能没有删减；它需要电脑已安装免费的 [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)。如果双击时 Windows 提示缺少 .NET，安装 Desktop Runtime 后再运行，或者改下 `portable` 免依赖包。`portable` 把完整运行环境放进 EXE，体积约 59–63 MB，但无需另外安装 .NET。
+
+| 发布包 | 适合谁 | 体积特点 | 额外要求 |
+| --- | --- | --- | --- |
+| `lite-win-x64` | 大多数 Intel/AMD Windows 电脑，推荐 | 约 180 KB | .NET 8 Desktop Runtime x64 |
+| `lite-win-arm64` | Windows on Arm，推荐 | 约 170 KB | .NET 8 Desktop Runtime Arm64 |
+| `portable-win-x64` | 不想安装运行库的 Intel/AMD 电脑 | 约 63 MB | 无 |
+| `portable-win-arm64` | 不想安装运行库的 Windows on Arm 电脑 | 约 59 MB | 无 |
+
+两类发布包都没有代码签名，Windows SmartScreen 可能显示“未知发布者”；不愿放行时，请直接审查源码并自行构建。
 
 ## 运行模式
 
@@ -46,6 +55,7 @@ CodexUniversalLauncher.exe --check-only
 CodexUniversalLauncher.exe --no-repair
 CodexUniversalLauncher.exe --silent --result result.txt
 CodexUniversalLauncher.exe --demo
+CodexUniversalLauncher.exe --keep-existing
 CodexUniversalLauncher.exe --self-test --result self-test.txt
 ```
 
@@ -56,6 +66,7 @@ CodexUniversalLauncher.exe --self-test --result self-test.txt
 | `--silent` | 隐藏窗口运行，并写入指定结果文件。 |
 | `--result <路径>` | 写出简短的机器可读结果。 |
 | `--demo` | 显示脱敏示例；不读取或修改本机网络。 |
+| `--keep-existing` | 保留已经运行的 ChatGPT/Codex，不自动重启；旧进程可能无法继承修复后的代理变量。 |
 | `--self-test` | 运行离线解析、脱敏和安全边界测试。 |
 
 首次使用建议先运行 `--check-only`，查看本地报告后再正常启动。
@@ -82,7 +93,9 @@ CodexUniversalLauncher.exe --self-test --result self-test.txt
 - `ALL_PROXY`
 - `NO_PROXY`
 
-写入前会在 `%LOCALAPPDATA%\CodexUniversalLauncher\backups` 保存 JSON 备份。若代理 URL 内含账号或密码，启动器拒绝自动复制和落盘。修复后如果 ChatGPT/Codex 已经运行，启动器会先询问是否正常退出；需要强制结束进程时还会再次确认。
+写入前会在 `%LOCALAPPDATA%\CodexUniversalLauncher\backups` 保存 JSON 备份。若代理 URL 内含账号或密码，启动器拒绝自动复制和落盘。
+
+在正常启动模式中，所有预检成功后，如果发现 `ChatGPT` 进程正在运行，启动器会先请求应用正常退出并等待最多 8 秒；仍未退出的 ChatGPT 后台进程会被自动结束，然后启动新的 ChatGPT/Codex 实例。它不会按泛化的 `Codex.exe` 名称结束进程，避免误伤 Codex CLI 或其他同名工具。这样可以省去手动关闭步骤，并让新进程继承本次选择的网络环境，但可能中断尚未完成的生成或工具调用，请在运行启动器前先完成重要任务。需要保留旧进程时使用 `--keep-existing`。只读检查、演示和离线自测模式绝不会关闭应用。
 
 系统代理注册表、VPN 配置、DNS、Winsock、防火墙、凭据、Cookie、聊天内容和项目文件都不会被修改。
 
@@ -104,14 +117,15 @@ CodexUniversalLauncher.exe --self-test --result self-test.txt
 dotnet restore
 dotnet build -c Release
 dotnet run -c Release -- --self-test --result self-test.txt
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
 ```
 
 项目不依赖第三方 NuGet 包。CI 会在 Windows 上构建并运行离线自测。
 
 ## 项目状态
 
-2.0.0 是首个公开版本。已完成内容见 [CHANGELOG.md](CHANGELOG.md)，后续计划见 [ROADMAP.md](ROADMAP.md)。欢迎提交兼容性反馈和 PR，参与前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+2.0.1 使用新的中文项目名「Codex启动器，不再5次重连」，新增“预检成功后自动关闭并重新启动现有 ChatGPT/Codex”，并提供约 170–180 KB 的轻量单文件包与免依赖备用包。已完成内容见 [CHANGELOG.md](CHANGELOG.md)，后续计划见 [ROADMAP.md](ROADMAP.md)。欢迎提交兼容性反馈和 PR，参与前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 商标说明
 

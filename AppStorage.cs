@@ -42,8 +42,8 @@ internal static class AppStorage
             var path = Path.Combine(ReportDirectory, $"Codex-Network-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
             var lines = new List<string>
             {
-                "Codex 通用启动器脱敏诊断报告",
-                $"版本: 2.0.0",
+                "Codex启动器，不再5次重连｜脱敏诊断报告",
+                $"版本: {GetVersion()}",
                 $"时间: {DateTimeOffset.Now:O}",
                 "说明: 未收集 API Key、Token、Cookie、聊天正文或项目文件。",
                 "",
@@ -93,4 +93,7 @@ internal static class AppStorage
             return Path.Combine(AppContext.BaseDirectory, "data");
         }
     }
+
+    private static string GetVersion() =>
+        typeof(AppStorage).Assembly.GetName().Version?.ToString(3) ?? "unknown";
 }

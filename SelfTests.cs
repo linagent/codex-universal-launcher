@@ -49,6 +49,24 @@ internal static class SelfTests
                 "{\"Name\":\"Codex\",\"AppID\":\"OpenAI.Codex_x!App\"}");
             return apps.Count == 1 && apps[0].AppId.Contains('!');
         });
+        Check("auto-close-default", () =>
+        {
+            var options = LauncherOptions.Parse([]);
+            return options.ShouldCloseExistingApp && !options.KeepExistingApp;
+        });
+        Check("auto-close-safety-modes", () =>
+        {
+            return !LauncherOptions.Parse(["--check-only"]).ShouldCloseExistingApp &&
+                   !LauncherOptions.Parse(["--demo"]).ShouldCloseExistingApp &&
+                   !LauncherOptions.Parse(["--self-test"]).ShouldCloseExistingApp &&
+                   !LauncherOptions.Parse(["--keep-existing"]).ShouldCloseExistingApp;
+        });
+        Check("target-process-names", () =>
+        {
+            return AppProcessManager.IsTargetProcessName("ChatGPT") &&
+                   !AppProcessManager.IsTargetProcessName("codex") &&
+                   !AppProcessManager.IsTargetProcessName("CodexUniversalLauncher");
+        });
 
         var output = new[] { $"EXIT_CODE={(failures == 0 ? 0 : 1)}" }.Concat(lines).ToList();
         if (!string.IsNullOrWhiteSpace(resultPath))

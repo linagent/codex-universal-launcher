@@ -24,7 +24,7 @@ internal sealed class LauncherForm : Form
     public LauncherForm(LauncherOptions options)
     {
         _options = options;
-        Text = "Codex 通用网络启动器";
+        Text = "Codex启动器，不再5次重连";
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -49,7 +49,7 @@ internal sealed class LauncherForm : Form
         _brandIcon.Location = new Point(24, 15);
         _brandIcon.Size = new Size(74, 74);
 
-        _title.Text = "Codex Universal Launcher";
+        _title.Text = "Codex启动器，不再5次重连";
         _title.ForeColor = Color.White;
         _title.Font = new Font(Font.FontFamily, 19F, FontStyle.Bold);
         _title.AutoSize = true;
@@ -132,7 +132,7 @@ internal sealed class LauncherForm : Form
         {
             var assembly = typeof(LauncherForm).Assembly;
             var resourceName = assembly.GetManifestResourceNames()
-                .FirstOrDefault(name => name.EndsWith("icon-primary-256.png", StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(name => name.EndsWith("icon-primary-128.png", StringComparison.OrdinalIgnoreCase));
             if (resourceName is null)
                 return null;
             using var stream = assembly.GetManifestResourceStream(resourceName);
@@ -230,22 +230,25 @@ internal sealed class LauncherForm : Form
 
             if (!_options.CheckOnly)
             {
-                if (shouldRepair && repair.Changed && Process.GetProcessesByName("ChatGPT").Length > 0)
+                if (_options.ShouldCloseExistingApp)
                 {
-                    var restart = MessageBox.Show(
-                        "检测到 ChatGPT/Codex 已在运行，而本次修正了用户代理环境。\n\n" +
-                        "已运行的进程不会自动继承新环境。是否先正常退出旧应用，再启动？\n\n" +
-                        "请先确认当前任务已经保存。",
-                        "需要重新继承网络环境",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning,
-                        MessageBoxDefaultButton.Button2);
-                    if (restart != DialogResult.Yes)
+                    var shutdown = await AppProcessManager.CloseRunningAppAsync(Step, CancellationToken.None);
+                    if (shutdown.Detected > 0)
                     {
-                        throw new InvalidOperationException(
-                            "环境已修正，但旧应用尚未重启。请保存工作、完全退出 ChatGPT/Codex 后，再运行本启动器。 ");
+                        var state = shutdown.ForcedClosed > 0 ? "FORCED" : "OK";
+                        AddResult(
+                            "APP_CLOSE",
+                            state,
+                            $"检测 {shutdown.Detected}，正常关闭 {shutdown.GracefullyClosed}，强制结束 {shutdown.ForcedClosed}");
                     }
-                    await CloseChatGptAsync();
+                    else
+                    {
+                        AddResult("APP_CLOSE", "NONE", "未检测到正在运行的 ChatGPT 应用");
+                    }
+                }
+                else if (_options.KeepExistingApp && AppProcessManager.HasRunningApp())
+                {
+                    AddResult("APP_CLOSE", "SKIPPED", "--keep-existing 已保留当前运行中的应用");
                 }
 
                 Step("检查通过，正在打开 ChatGPT/Codex……");
@@ -267,7 +270,7 @@ internal sealed class LauncherForm : Form
             if (!_options.Silent)
             {
                 MessageBox.Show(
-                    ex.Message + "\n\n启动器没有修改代理软件、路由、DNS、Winsock 或 Codex 会话。",
+                    ex.Message + "\n\n启动器没有修改代理软件、路由、DNS 或 Winsock。",
                     "Codex 网络启动检查",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -292,38 +295,6 @@ internal sealed class LauncherForm : Form
                 Close();
             }
         }
-    }
-
-    private async Task CloseChatGptAsync()
-    {
-        Step("正在请求旧 ChatGPT/Codex 正常退出……");
-        foreach (var process in Process.GetProcessesByName("ChatGPT"))
-        {
-            try { process.CloseMainWindow(); } catch { }
-        }
-
-        var deadline = DateTime.UtcNow.AddSeconds(10);
-        while (DateTime.UtcNow < deadline && Process.GetProcessesByName("ChatGPT").Length > 0)
-            await Task.Delay(500);
-        var remaining = Process.GetProcessesByName("ChatGPT");
-        if (remaining.Length == 0)
-            return;
-
-        var force = MessageBox.Show(
-            "应用仍有后台进程没有退出。是否强制结束这些 ChatGPT 进程？\n\n" +
-            "这可能中断尚未完成的生成或工具调用。",
-            "需要第二次确认",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Warning,
-            MessageBoxDefaultButton.Button2);
-        if (force != DialogResult.Yes)
-            throw new InvalidOperationException("旧应用没有完全退出，已取消启动。 ");
-
-        foreach (var process in remaining)
-        {
-            try { process.Kill(entireProcessTree: true); } catch { }
-        }
-        await Task.Delay(1200);
     }
 
     private void Step(string message)

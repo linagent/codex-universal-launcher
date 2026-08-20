@@ -1,6 +1,7 @@
 <div align="center">
-  <img src="assets/brand/icon-primary-256.png" width="128" alt="Codex Universal Launcher icon">
-  <h1>Codex Universal Launcher</h1>
+  <img src="assets/brand/icon-primary-256.png" width="128" alt="Codex启动器，不再5次重连 icon">
+  <h1>Codex启动器，不再5次重连</h1>
+  <p><strong>Codex Launcher — No More 5× Reconnects</strong></p>
   <p>Discover the Windows network path that actually works, validate TLS, and then launch ChatGPT/Codex.</p>
 
   [简体中文](README.zh-CN.md) · [Download](https://github.com/linagent/codex-universal-launcher/releases/latest) · [Report a bug](https://github.com/linagent/codex-universal-launcher/issues/new?template=bug_report.yml)
@@ -17,7 +18,7 @@
 
 Windows users often have more than one network signal at the same time: a system proxy, PAC, WinHTTP proxy, environment variables, a local HTTP/SOCKS listener, or a VPN/TUN adapter. A desktop app may inherit a stale value even while the browser works.
 
-Codex Universal Launcher performs a bounded preflight before launch:
+The launcher performs a bounded preflight before launch:
 
 1. Reads only the target host names needed for the installed ChatGPT/Codex app and any custom `base_url` host in Codex configuration.
 2. Discovers configured HTTP/SOCKS routes and active VPN/TUN signals without assuming a specific proxy product or port.
@@ -37,11 +38,20 @@ The screenshots use `--demo`; they contain representative data and do not expose
 
 ## Quick start
 
-1. Download the correct ZIP from [Releases](https://github.com/linagent/codex-universal-launcher/releases): `win-x64` for most Windows PCs, or `win-arm64` for Windows on Arm.
+1. Download the recommended lightweight ZIP from [Releases](https://github.com/linagent/codex-universal-launcher/releases): `lite-win-x64` for most Windows PCs, or `lite-win-arm64` for Windows on Arm.
 2. Extract the ZIP to a normal folder. Optionally compare its SHA-256 value with the release notes.
-3. Run `CodexUniversalLauncher.exe`. Keep your proxy/VPN running; the launcher will test available routes and open ChatGPT/Codex after validation.
+3. Run `CodexUniversalLauncher.exe`. Keep your proxy/VPN running; after validation, the launcher automatically closes an existing ChatGPT/Codex instance and starts a fresh one.
 
-The binaries are self-contained and do not require a separate .NET installation. They are currently unsigned, so Windows SmartScreen may show an unknown-publisher warning. If that is not acceptable, build from source.
+The recommended `lite` download is about 170–180 KB and retains all launcher features. It requires the free [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). If Windows reports that .NET is missing, install the Desktop Runtime and run the launcher again, or use the larger `portable` download. The portable build embeds the runtime and needs no separate .NET installation.
+
+| Package | Recommended for | Size profile | Requirement |
+| --- | --- | --- | --- |
+| `lite-win-x64` | Most Intel/AMD Windows PCs | About 180 KB | .NET 8 Desktop Runtime x64 |
+| `lite-win-arm64` | Windows on Arm | About 170 KB | .NET 8 Desktop Runtime Arm64 |
+| `portable-win-x64` | Intel/AMD PCs where installing a runtime is undesirable | About 63 MB | None |
+| `portable-win-arm64` | Windows on Arm where installing a runtime is undesirable | About 59 MB | None |
+
+Both variants are currently unsigned, so Windows SmartScreen may show an unknown-publisher warning. If that is not acceptable, build from source.
 
 ## Modes
 
@@ -50,6 +60,7 @@ CodexUniversalLauncher.exe --check-only
 CodexUniversalLauncher.exe --no-repair
 CodexUniversalLauncher.exe --silent --result result.txt
 CodexUniversalLauncher.exe --demo
+CodexUniversalLauncher.exe --keep-existing
 CodexUniversalLauncher.exe --self-test --result self-test.txt
 ```
 
@@ -60,6 +71,7 @@ CodexUniversalLauncher.exe --self-test --result self-test.txt
 | `--silent` | Runs without a visible window and writes the requested result file. |
 | `--result <path>` | Writes a small machine-readable result summary. |
 | `--demo` | Displays sanitized representative results; does not inspect or modify the network. |
+| `--keep-existing` | Keeps an already-running ChatGPT/Codex instance instead of automatically restarting it. The existing process may not inherit repaired proxy variables. |
 | `--self-test` | Runs offline parser, redaction, and safety-boundary tests. |
 
 For the safest first run, start with `--check-only`, inspect the local report, and then run normally.
@@ -86,7 +98,9 @@ Normal launch mode may change only these **per-user** variables when a tested ro
 - `ALL_PROXY`
 - `NO_PROXY`
 
-Before writing, the launcher saves a JSON backup under `%LOCALAPPDATA%\CodexUniversalLauncher\backups`. It refuses to copy proxy URLs containing embedded credentials into a new environment configuration. If ChatGPT/Codex is already running after a repair, the launcher asks before closing it and asks again before any forced termination.
+Before writing, the launcher saves a JSON backup under `%LOCALAPPDATA%\CodexUniversalLauncher\backups`. It refuses to copy proxy URLs containing embedded credentials into a new environment configuration.
+
+In normal launch mode, after all preflight checks pass, the launcher automatically closes running `ChatGPT` processes so the new ChatGPT/Codex instance inherits the selected environment. It deliberately does not target generic `Codex.exe` processes, avoiding Codex CLI and unrelated tools. It first requests a normal close and waits up to eight seconds; remaining ChatGPT background processes are then terminated automatically. This can interrupt unfinished generations or tool calls, so finish important work before running the launcher. Use `--keep-existing` to opt out. Read-only, demo, and self-test modes never close the app.
 
 No registry proxy settings, VPN settings, DNS, Winsock, firewall rules, credentials, cookies, conversations, or project files are modified.
 
@@ -108,14 +122,15 @@ Requirements: Windows 10/11 and the .NET 8 SDK.
 dotnet restore
 dotnet build -c Release
 dotnet run -c Release -- --self-test --result self-test.txt
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
 ```
 
 The project has no third-party NuGet dependencies. CI builds and runs the offline self-tests on Windows.
 
 ## Project status
 
-Version 2.0.0 is the first public release. See [ROADMAP.md](ROADMAP.md) for planned work and [CHANGELOG.md](CHANGELOG.md) for shipped changes.
+Version 2.0.1 adopts the Chinese project name “Codex启动器，不再5次重连”, adds automatic restart of an already-running ChatGPT/Codex instance after a successful preflight, and introduces a lightweight single-file download alongside the dependency-free portable fallback. See [ROADMAP.md](ROADMAP.md) for planned work and [CHANGELOG.md](CHANGELOG.md) for shipped changes.
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Small compatibility reports for a specific proxy/VPN product are particularly useful, provided secrets and real account data are removed.
 

@@ -16,6 +16,7 @@ data/
 *.zip
 self-test.txt
 *-self-test.txt
+self-test*.txt
 .vs/
 .idea/
 .vscode/

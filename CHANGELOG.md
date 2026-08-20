@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented here.
 
+## [2.0.1] - 2026-08-20
+
+### Added
+
+- Automatically closes an already-running ChatGPT/Codex instance after the network preflight passes and before launching a fresh instance.
+- Requests a graceful close first, waits up to eight seconds, and then terminates any remaining background processes without requiring manual confirmation.
+- Adds `--keep-existing` to preserve the current app process when an automatic restart is not desired.
+- Adopts the Chinese product name `Codex启动器，不再5次重连` in the app and project documentation.
+
+### Distribution
+
+- Adds recommended framework-dependent single-file packages that reduce the ZIP download from roughly 60–70 MB to about 170–180 KB without removing launcher features.
+- Keeps compressed self-contained portable packages as dependency-free fallbacks.
+- Replaces the oversized executable icon payload with a reproducible compact 32/64/128-pixel icon bundle.
+
+### Safety
+
+- Read-only, demo, and offline self-test modes never close ChatGPT/Codex.
+- Automatic shutdown happens only after route validation, environment handling, and installed-app discovery have succeeded.
+- Process-name selection is covered by offline tests and is limited to `ChatGPT`, excluding Codex CLI and the launcher itself.
+
 ## [2.0.0] - 2026-08-17
 
 ### Added

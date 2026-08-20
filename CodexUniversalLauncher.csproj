@@ -8,13 +8,17 @@
     <AssemblyName>CodexUniversalLauncher</AssemblyName>
     <RootNamespace>CodexUniversalLauncher</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>assets\brand\codex-universal-launcher.ico</ApplicationIcon>
+    <ApplicationIcon>assets\brand\codex-universal-launcher-compact.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>2.0.0</Version>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyTitle>Codex启动器，不再5次重连</AssemblyTitle>
+    <Product>Codex启动器，不再5次重连</Product>
+    <Description>自动发现代理与 VPN、验证连接并安全启动 ChatGPT/Codex。</Description>
+    <Version>2.0.1</Version>
+    <AssemblyVersion>2.0.1.0</AssemblyVersion>
+    <FileVersion>2.0.1.0</FileVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="assets\brand\icon-primary-256.png" />
+    <EmbeddedResource Include="assets\brand\icon-primary-128.png" />
   </ItemGroup>
 </Project>
